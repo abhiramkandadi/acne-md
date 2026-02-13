@@ -15,6 +15,11 @@ export default {
     extend: {
       fontFamily: {
         sans: ['Inter', 'sans-serif'],
+        display: ['Syne', 'sans-serif'],
+      },
+      borderRadius: {
+        '3xl': '1.5rem',
+        '4xl': '2rem',
       },
       colors: {
         border: "hsl(var(--border))",
