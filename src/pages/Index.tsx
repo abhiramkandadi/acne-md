@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import BottomNav from "@/components/BottomNav";
+import BottomNav, { type Tab } from "@/components/BottomNav";
 import HomeScreen from "@/components/HomeScreen";
 import ProductShield from "@/components/ProductShield";
 import DrAIChat from "@/components/DrAIChat";
+import SkinDiary from "@/components/SkinDiary";
+import SettingsScreen from "@/components/SettingsScreen";
 import AuraBackground from "@/components/AuraBackground";
-
-type Tab = "home" | "shield" | "chat";
 
 const Index = () => {
   const [tab, setTab] = useState<Tab>("home");
@@ -24,8 +24,10 @@ const Index = () => {
             transition={{ duration: 0.25 }}
           >
             {tab === "home" && <HomeScreen />}
+            {tab === "diary" && <SkinDiary />}
             {tab === "shield" && <ProductShield />}
             {tab === "chat" && <DrAIChat />}
+            {tab === "settings" && <SettingsScreen />}
           </motion.div>
         </AnimatePresence>
       </main>

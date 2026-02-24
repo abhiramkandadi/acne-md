@@ -1,18 +1,20 @@
-import { Home, Shield, MessageCircle } from "lucide-react";
+import { Home, Shield, MessageCircle, CalendarDays, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 
-type Tab = "home" | "shield" | "chat";
+export type Tab = "home" | "shield" | "chat" | "diary" | "settings";
 
 interface BottomNavProps {
   active: Tab;
   onChange: (tab: Tab) => void;
 }
 
-const tabs = [
-  { id: "home" as Tab, icon: Home, label: "Skin Check" },
-  { id: "shield" as Tab, icon: Shield, label: "Clog-Test" },
-  { id: "chat" as Tab, icon: MessageCircle, label: "Dr. AI" },
+const tabs: { id: Tab; icon: typeof Home; label: string }[] = [
+  { id: "home", icon: Home, label: "Home" },
+  { id: "diary", icon: CalendarDays, label: "Diary" },
+  { id: "shield", icon: Shield, label: "Clog-Test" },
+  { id: "chat", icon: MessageCircle, label: "Dr. AI" },
+  { id: "settings", icon: Settings, label: "Settings" },
 ];
 
 const BottomNav = ({ active, onChange }: BottomNavProps) => {
@@ -31,7 +33,7 @@ const BottomNav = ({ active, onChange }: BottomNavProps) => {
             onClick={() => onChange(id)}
             whileTap={{ scale: 0.92 }}
             className={cn(
-              "relative flex items-center gap-2 px-4 py-2.5 rounded-full transition-all duration-300",
+              "relative flex items-center gap-2 px-3 py-2.5 rounded-full transition-all duration-300",
               active === id
                 ? "text-primary-foreground"
                 : "text-muted-foreground hover:text-foreground"
@@ -41,7 +43,7 @@ const BottomNav = ({ active, onChange }: BottomNavProps) => {
               <motion.div
                 layoutId="nav-pill"
                 className="absolute inset-0 rounded-full bg-primary"
-                style={{ boxShadow: '0 0 20px hsl(80, 100%, 50%, 0.4)' }}
+                style={{ boxShadow: '0 0 20px hsl(var(--primary) / 0.4)' }}
                 transition={{ type: "spring", stiffness: 400, damping: 30 }}
               />
             )}

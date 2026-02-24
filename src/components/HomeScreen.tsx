@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Scan } from "lucide-react";
+import { Scan, Zap, Eye, ShieldCheck, Flame } from "lucide-react";
 import { motion } from "framer-motion";
 import ScannerFlow from "./ScannerFlow";
 import DiagnosisCard from "./DiagnosisCard";
+import StreakCounter from "./StreakCounter";
 
 const getGreeting = () => {
   const h = new Date().getHours();
@@ -12,6 +13,12 @@ const getGreeting = () => {
 };
 
 type Phase = "idle" | "scanning" | "result";
+
+const howItWorks = [
+  { icon: Eye, title: "Capture", desc: "Our camera module captures your skin in high detail." },
+  { icon: Zap, title: "Analyze", desc: "YOLOv8 AI detects acne types & severity in real-time." },
+  { icon: ShieldCheck, title: "Act", desc: "Get a personalized protocol backed by dermatology science." },
+];
 
 const HomeScreen = () => {
   const [phase, setPhase] = useState<Phase>("idle");
@@ -28,14 +35,17 @@ const HomeScreen = () => {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="flex flex-col items-center min-h-[calc(100vh-6rem)] px-6 pt-16"
+      className="flex flex-col items-center min-h-[calc(100vh-6rem)] px-6 pt-12"
     >
+      {/* Streak */}
+      <StreakCounter />
+
       {/* Greeting */}
       <motion.p
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
-        className="text-muted-foreground text-sm tracking-widest uppercase mb-2"
+        className="text-muted-foreground text-sm tracking-widest uppercase mb-2 mt-6"
       >
         {getGreeting()}
       </motion.p>
@@ -47,15 +57,15 @@ const HomeScreen = () => {
       >
         let's check
         <br />
-        <span className="text-glow-green" style={{ color: 'hsl(80, 100%, 50%)' }}>your skin</span>
+        <span className="text-glow-green text-primary">your skin</span>
       </motion.h1>
       <motion.p
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.4 }}
-        className="text-muted-foreground text-sm text-center max-w-xs mb-10"
+        className="text-muted-foreground text-sm text-center max-w-xs mb-8"
       >
-        no bs. just science. tap to scan.
+        AI-powered skin analysis. tap to scan.
       </motion.p>
 
       {/* Scan Button */}
@@ -63,36 +73,52 @@ const HomeScreen = () => {
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ delay: 0.5, type: "spring", stiffness: 200 }}
-        className="relative mb-10"
+        className="relative mb-8"
       >
         <div className="absolute inset-0 rounded-full pulse-ring" style={{
-          background: 'radial-gradient(circle, hsl(80, 100%, 50%, 0.15), transparent 70%)',
+          background: 'radial-gradient(circle, hsl(var(--primary) / 0.15), transparent 70%)',
           transform: 'scale(1.4)',
         }} />
         <motion.button
           onClick={() => setPhase("scanning")}
           whileTap={{ scale: 0.92 }}
           whileHover={{ scale: 1.05 }}
-          className="relative w-40 h-40 rounded-full glass-strong flex items-center justify-center"
-          style={{ boxShadow: '0 0 40px hsl(80, 100%, 50%, 0.2), inset 0 0 30px hsl(0, 0%, 100%, 0.03)' }}
+          className="relative w-36 h-36 rounded-full glass-strong flex items-center justify-center"
+          style={{ boxShadow: '0 0 40px hsl(var(--primary) / 0.2), inset 0 0 30px hsl(0, 0%, 100%, 0.03)' }}
         >
-          <Scan className="w-12 h-12" style={{ color: 'hsl(80, 100%, 50%)' }} />
+          <Scan className="w-11 h-11 text-primary" />
         </motion.button>
       </motion.div>
 
-      {/* Manifesto Card */}
+      {/* How It Works */}
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.7 }}
-        whileHover={{ rotateX: -3, rotateY: 5, scale: 1.02 }}
-        style={{ perspective: 800, transformStyle: 'preserve-3d' }}
-        className="glass p-5 max-w-xs w-full"
+        className="glass p-5 max-w-xs w-full mb-6"
       >
-        <p className="text-sm leading-relaxed" style={{ fontStyle: 'italic' }}>
-          "I built this because I was tired of guessing. No BS, just science. Let's clear this up together. 🖤"
-        </p>
-        <p className="text-xs text-muted-foreground mt-3">— the founder</p>
+        <h3 className="font-display text-sm font-semibold mb-4 flex items-center gap-2">
+          <Zap className="w-4 h-4 text-primary" /> How It Works
+        </h3>
+        <div className="space-y-4">
+          {howItWorks.map((step, i) => (
+            <motion.div
+              key={step.title}
+              initial={{ x: -15, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              transition={{ delay: 0.8 + i * 0.1 }}
+              className="flex items-start gap-3"
+            >
+              <div className="w-8 h-8 rounded-xl glass-strong flex items-center justify-center shrink-0">
+                <step.icon className="w-4 h-4 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm font-medium">{step.title}</p>
+                <p className="text-xs text-muted-foreground">{step.desc}</p>
+              </div>
+            </motion.div>
+          ))}
+        </div>
       </motion.div>
     </motion.div>
   );
