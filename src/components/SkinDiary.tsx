@@ -1,11 +1,11 @@
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight, Plus, Check } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Check, X, FileText, Activity } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   getDiaryEntries,
   addDiaryEntry,
-  getEntryForDate,
+  updateEntryNote,
   formatDateKey,
   type DiaryEntry,
 } from "@/lib/skinDiary";
@@ -21,11 +21,30 @@ const MOODS = [
 
 const DAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
+// Mock scan thumbnails per mood
+const MOOD_THUMBNAILS: Record<string, string> = {
+  "😊": "🟢",
+  "😐": "🟡",
+  "😟": "🟠",
+  "😣": "🔴",
+  "🌟": "✨",
+};
+
+const MOCK_SCAN_DATA: Record<string, { blemishCount: number; areas: string[]; severity: string }> = {
+  "😊": { blemishCount: 2, areas: ["forehead"], severity: "minimal" },
+  "😐": { blemishCount: 8, areas: ["t-zone", "chin"], severity: "mild" },
+  "😟": { blemishCount: 15, areas: ["t-zone", "cheeks", "chin"], severity: "moderate" },
+  "😣": { blemishCount: 25, areas: ["forehead", "cheeks", "chin", "jawline"], severity: "active" },
+  "🌟": { blemishCount: 0, areas: [], severity: "clear" },
+};
+
 const SkinDiary = () => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [entries, setEntries] = useState<DiaryEntry[]>(getDiaryEntries);
   const [showMoodPicker, setShowMoodPicker] = useState(false);
+  const [showDayDetail, setShowDayDetail] = useState(false);
+  const [noteText, setNoteText] = useState("");
 
   const year = currentMonth.getFullYear();
   const month = currentMonth.getMonth();
@@ -49,20 +68,37 @@ const SkinDiary = () => {
     setCurrentMonth(new Date(year, month + dir, 1));
     setSelectedDate(null);
     setShowMoodPicker(false);
+    setShowDayDetail(false);
   };
 
   const handleDayClick = (day: number) => {
     const key = formatDateKey(new Date(year, month, day));
     setSelectedDate(key);
-    setShowMoodPicker(!entryMap[key]);
+    if (entryMap[key]) {
+      setShowDayDetail(true);
+      setShowMoodPicker(false);
+      setNoteText(entryMap[key].note || "");
+    } else {
+      setShowMoodPicker(true);
+      setShowDayDetail(false);
+    }
   };
 
   const handleMoodSelect = (mood: string) => {
     if (!selectedDate) return;
-    const entry: DiaryEntry = { date: selectedDate, mood };
+    const scanData = MOCK_SCAN_DATA[mood];
+    const entry: DiaryEntry = { date: selectedDate, mood, scanSummary: scanData };
     addDiaryEntry(entry);
     setEntries(getDiaryEntries());
     setShowMoodPicker(false);
+    setShowDayDetail(true);
+    setNoteText("");
+  };
+
+  const handleSaveNote = () => {
+    if (!selectedDate) return;
+    updateEntryNote(selectedDate, noteText);
+    setEntries(getDiaryEntries());
   };
 
   const today = formatDateKey(new Date());
@@ -113,7 +149,7 @@ const SkinDiary = () => {
           ))}
         </div>
 
-        {/* Day cells */}
+        {/* Day cells with thumbnails */}
         <div className="grid grid-cols-7 gap-1">
           {calendarDays.map((day, i) => {
             if (day === null) return <div key={`empty-${i}`} />;
@@ -130,7 +166,7 @@ const SkinDiary = () => {
                 disabled={isFuture}
                 onClick={() => handleDayClick(day)}
                 className={cn(
-                  "relative aspect-square flex items-center justify-center rounded-xl text-xs font-medium transition-all",
+                  "relative aspect-square flex flex-col items-center justify-center rounded-xl text-xs font-medium transition-all",
                   isSelected && "ring-2 ring-primary",
                   isToday && !isSelected && "ring-1 ring-muted-foreground/30",
                   isFuture && "opacity-20 cursor-not-allowed",
@@ -138,9 +174,17 @@ const SkinDiary = () => {
                 )}
               >
                 {entry ? (
-                  <span className="text-base">{entry.mood}</span>
+                  <>
+                    <span className="text-sm leading-none">{entry.mood}</span>
+                    <span className="text-[8px] text-muted-foreground mt-0.5">
+                      {MOOD_THUMBNAILS[entry.mood] || "•"}
+                    </span>
+                  </>
                 ) : (
                   <span>{day}</span>
+                )}
+                {entry?.note && (
+                  <div className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-primary" />
                 )}
               </motion.button>
             );
@@ -148,7 +192,7 @@ const SkinDiary = () => {
         </div>
       </motion.div>
 
-      {/* Mood Picker / Selected Entry */}
+      {/* Mood Picker */}
       <AnimatePresence mode="wait">
         {showMoodPicker && selectedDate && (
           <motion.div
@@ -176,26 +220,98 @@ const SkinDiary = () => {
           </motion.div>
         )}
 
-        {selectedEntry && !showMoodPicker && (
+        {/* Day Detail View */}
+        {showDayDetail && selectedEntry && (
           <motion.div
-            key="entry-display"
+            key="day-detail"
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 10, opacity: 0 }}
-            className="glass p-5 mt-4 flex items-center gap-3"
+            className="mt-4 space-y-3"
           >
-            <span className="text-3xl">{selectedEntry.mood}</span>
-            <div>
-              <p className="text-sm font-medium">
-                {new Date(selectedEntry.date + "T12:00:00").toLocaleDateString("en-US", {
-                  weekday: "long",
-                  month: "short",
-                  day: "numeric",
-                })}
-              </p>
-              <p className="text-xs text-muted-foreground">Skin mood logged</p>
+            {/* Summary header */}
+            <div className="glass p-5">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl">{selectedEntry.mood}</span>
+                  <div>
+                    <p className="text-sm font-medium">
+                      {new Date(selectedEntry.date + "T12:00:00").toLocaleDateString("en-US", {
+                        weekday: "long",
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </p>
+                    <p className="text-xs text-muted-foreground">Skin mood logged</p>
+                  </div>
+                </div>
+                <motion.button
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => { setShowDayDetail(false); setSelectedDate(null); }}
+                  className="p-1.5 rounded-full glass-strong"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </motion.button>
+              </div>
+
+              {/* Scan summary */}
+              {selectedEntry.scanSummary && (
+                <div className="glass-strong p-4 space-y-2">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Activity className="w-3.5 h-3.5 text-primary" />
+                    <span className="text-xs font-semibold uppercase tracking-wider text-primary">Scan Summary</span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="text-center">
+                      <p className="text-lg font-display font-bold">{selectedEntry.scanSummary.blemishCount}</p>
+                      <p className="text-[10px] text-muted-foreground">blemishes</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-lg font-display font-bold">{selectedEntry.scanSummary.areas.length}</p>
+                      <p className="text-[10px] text-muted-foreground">areas</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-xs font-medium px-2 py-1 rounded-full glass-strong">{selectedEntry.scanSummary.severity}</p>
+                    </div>
+                  </div>
+                  {selectedEntry.scanSummary.areas.length > 0 && (
+                    <div className="flex gap-1.5 flex-wrap mt-2">
+                      {selectedEntry.scanSummary.areas.map((area) => (
+                        <span key={area} className="text-[10px] px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">
+                          {area}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
-            <Check className="w-4 h-4 text-primary ml-auto" />
+
+            {/* Notes section */}
+            <div className="glass p-5">
+              <div className="flex items-center gap-2 mb-3">
+                <FileText className="w-3.5 h-3.5 text-primary" />
+                <span className="text-xs font-semibold uppercase tracking-wider text-primary">Notes</span>
+              </div>
+              <textarea
+                value={noteText}
+                onChange={(e) => setNoteText(e.target.value)}
+                onBlur={handleSaveNote}
+                placeholder="diet, sleep, products used..."
+                className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground resize-none outline-none min-h-[80px]"
+              />
+              {noteText !== (selectedEntry.note || "") && (
+                <motion.button
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={handleSaveNote}
+                  className="mt-2 text-xs font-medium px-4 py-2 rounded-full bg-primary text-primary-foreground"
+                >
+                  Save Note
+                </motion.button>
+              )}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -210,9 +326,9 @@ const SkinDiary = () => {
           onClick={() => {
             setSelectedDate(today);
             setShowMoodPicker(true);
+            setShowDayDetail(false);
           }}
-          className="mt-auto mb-4 py-3.5 rounded-full text-sm font-bold flex items-center justify-center gap-2"
-          style={{ background: "hsl(var(--primary))", color: "hsl(var(--primary-foreground))" }}
+          className="mt-auto mb-4 py-3.5 rounded-full text-sm font-bold flex items-center justify-center gap-2 bg-primary text-primary-foreground"
         >
           <Plus className="w-4 h-4" /> Log Today's Skin
         </motion.button>

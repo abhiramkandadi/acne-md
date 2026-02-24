@@ -1,9 +1,10 @@
-import { Moon, Sun, Info, ExternalLink } from "lucide-react";
+import { Moon, Sun, Info, Palette, Check } from "lucide-react";
 import { motion } from "framer-motion";
-import { useTheme } from "@/lib/ThemeProvider";
+import { useTheme, ACCENT_COLORS } from "@/lib/ThemeProvider";
+import { cn } from "@/lib/utils";
 
 const SettingsScreen = () => {
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, accentColor, setAccentColor } = useTheme();
 
   return (
     <motion.div
@@ -36,14 +37,53 @@ const SettingsScreen = () => {
               key={value}
               whileTap={{ scale: 0.95 }}
               onClick={() => setTheme(value)}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-medium transition-all ${
+              className={cn(
+                "flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-medium transition-all",
                 theme === value
                   ? "bg-primary text-primary-foreground"
                   : "glass hover:bg-secondary"
-              }`}
+              )}
             >
               <Icon className="w-4 h-4" />
               {label}
+            </motion.button>
+          ))}
+        </div>
+      </motion.div>
+
+      {/* Accent Color Picker */}
+      <motion.div
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.15 }}
+        className="glass p-5"
+      >
+        <div className="flex items-center gap-2 mb-3">
+          <Palette className="w-4 h-4 text-primary" />
+          <p className="text-sm font-medium">App Color</p>
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          {ACCENT_COLORS.map((color) => (
+            <motion.button
+              key={color.name}
+              whileTap={{ scale: 0.92 }}
+              onClick={() => setAccentColor(color)}
+              className={cn(
+                "relative flex items-center gap-2 px-3 py-2.5 rounded-2xl text-xs font-medium transition-all",
+                accentColor.name === color.name
+                  ? "glass-strong ring-2 ring-primary"
+                  : "glass hover:bg-secondary"
+              )}
+            >
+              <div
+                className="w-5 h-5 rounded-full shrink-0 flex items-center justify-center"
+                style={{ background: color.preview }}
+              >
+                {accentColor.name === color.name && (
+                  <Check className="w-3 h-3" style={{ color: "hsl(0, 0%, 7%)" }} />
+                )}
+              </div>
+              <span className="truncate">{color.name}</span>
             </motion.button>
           ))}
         </div>

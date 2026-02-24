@@ -4,6 +4,11 @@ export interface DiaryEntry {
   date: string; // YYYY-MM-DD
   mood: string; // emoji
   note?: string;
+  scanSummary?: {
+    blemishCount: number;
+    areas: string[];
+    severity: string;
+  };
 }
 
 const DIARY_KEY = "md-acne-diary";
@@ -21,6 +26,15 @@ export const addDiaryEntry = (entry: DiaryEntry): void => {
   const entries = getDiaryEntries().filter((e) => e.date !== entry.date);
   entries.push(entry);
   localStorage.setItem(DIARY_KEY, JSON.stringify(entries));
+};
+
+export const updateEntryNote = (date: string, note: string): void => {
+  const entries = getDiaryEntries();
+  const idx = entries.findIndex((e) => e.date === date);
+  if (idx >= 0) {
+    entries[idx].note = note;
+    localStorage.setItem(DIARY_KEY, JSON.stringify(entries));
+  }
 };
 
 export const getEntryForDate = (date: string): DiaryEntry | undefined => {
